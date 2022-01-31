@@ -1,0 +1,68 @@
+---
+- hosts: wireless
+  gather_facts: false
+  roles:
+    - arubanetworks.aos_wlan_role
+  tasks:
+    - name: get hostname
+      aos_api_config:
+        method: GET
+        api_object: hostname
+        config_path: /mm/mynode
+      register: var1
+
+    - name: show hostname
+      debug:
+        msg: "{{ var1.response._data.hostname }}"
+
+    - name: get vlan
+      aos_show_command:
+       command: show vlan
+      register: var2
+
+    - name: show vlan
+      debug:
+        msg: "{{ var2 }}"
+
+    - name: configure new vlan and svi
+      aos_api_config:
+        method: POST
+        config_path: /mm/mynode
+        data:
+         - vlan_id:
+             - id: 45
+         - int_vlan:
+             - id: 45
+               int_vlan_ip:
+                 ipaddr: 10.1.1.45
+                 ipmask: 255.255.255.0
+        commit: True
+
+    - name: add new wlan
+      aos_api_config:
+        method: POST
+        config_path: /mm/mynode
+        data:
+         - ssid_prof:
+             profile-name: "test2_ssid_prof"
+             essid:
+               essid: "test2"
+             wpa_passphrase:
+               wpa-passphrase: "aruba123"
+             opmode:
+               wpa2-psk-aes: true 
+         - dot1x_auth_profile:
+              profile-name: test2_dot1x
+         - aaa_prof:
+              profile-name: test2_aaa_prof
+              dot1x_auth_profile:
+                profile-name: test2_dot1x
+         - virtual_ap:
+              profile-name: test2_vap
+              aaa_prof:
+                profile-name: test2_aaa_prof
+              ssid_prof:
+                profile-name: test2_ssid_prof
+        commit: True
+
+...

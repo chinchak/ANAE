@@ -1,0 +1,37 @@
+---
+  - hosts: switches
+    gather_facts: False
+    roles:
+      - role: arubanetworks.aoscx_role
+    vars:
+      ansible_connection: network_cli
+      ansible_python_interpreter: /home/student/lab_env/bin/python3
+    tasks:
+      - name: "Run some commads"
+        aoscx_command:
+          commands: ["show lldp neighbor-info","show vlan"]
+        register: command_output
+        when: ansible_connection == "network_cli"
+
+      - name: "Display the output"
+        debug:
+          msg: "{{ command_output }}"
+        when: ansible_connection == "network_cli"
+
+  - hosts: switches
+    gather_facts: False
+    roles:
+      - role: arubanetworks.aoscx_role
+    vars:
+      ansible_connection: httpapi
+    tasks:
+      - name: "Create new VLAN 30"
+        aoscx_vlan:
+          vlan_id: "{{ item }}"
+          name: test_vlan
+          state: create
+        loop:
+          - 30
+          - 31
+        when: ansible_connection == "httpapi"
+...
